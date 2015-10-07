@@ -47,9 +47,9 @@
       expect(launchInstanceWorkflow.title).toBeDefined();
     });
 
-    it('should have the six steps defined', function () {
+    it('should have the eight steps defined', function () {
       expect(launchInstanceWorkflow.steps).toBeDefined();
-      expect(launchInstanceWorkflow.steps.length).toBe(6);
+      expect(launchInstanceWorkflow.steps.length).toBe(8);
 
       var forms = [
         'launchInstanceSourceForm',
@@ -57,7 +57,8 @@
         'launchInstanceNetworkForm',
         'launchInstanceAccessAndSecurityForm',
         'launchInstanceKeypairForm',
-        'launchInstanceConfigurationForm'
+        'launchInstanceConfigurationForm',
+        'launchInstanceMetadataForm'
       ];
 
       forms.forEach(function(expectedForm, idx) {
