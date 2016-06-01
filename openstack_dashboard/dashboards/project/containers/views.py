@@ -24,6 +24,7 @@ import os
 
 import django
 from django import http
+from django.core.urlresolvers import reverse_lazy
 from django.utils.functional import cached_property  # noqa
 from django.utils.translation import ugettext_lazy as _
 from django.views import generic
@@ -340,3 +341,34 @@ class UpdateObjectView(forms.ModalFormView):
         context['subfolder_path'] = self.kwargs["subfolder_path"]
         context['object_name'] = self.kwargs["object_name"]
         return context
+
+class UpdateContainerMetadataView(forms.ModalFormView):
+    form_class = project_forms.UpdateContainerMetadata
+    modal_id = "update_container_metadata_modal"
+    modal_header = _("Update Container Metadata")
+    template_name = 'project/containers/update_container_metadata.html'
+    submit_label = _("Update Container Metadata")
+    submit_url = "horizon:project:containers:update_container_metadata"
+    success_url = reverse_lazy("horizon:project:containers:index")
+    page_title = _("Update Container Metadata")
+
+    @memoized.memoized_method
+    def get_object(self):
+        try:
+            return api.swift.swift_get_container(self.request, self.kwargs["container_name"],
+                                                 with_data=False)
+        except Exception:
+            redirect = reverse("horizon:project:containers:index")
+            exceptions.handle(self.request, _('Unable to retrieve details.'), redirect=redirect)
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateContainerMetadataView, self).get_context_data(**kwargs)
+        context['container_name'] = self.kwargs["container_name"]
+        args = (self.kwargs['container_name'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    def get_initial(self):
+        container =  self.get_object()
+        return { 'container_name': container.name,
+                 'metadata': container.metadata }

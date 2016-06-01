@@ -378,6 +378,12 @@ class CreateForm(forms.SelfHandlingForm):
                 raise ValidationError(error_message)
 
             metadata = {}
+            #metadata = data.get('metadata', None)
+            metadata_list = request.POST.getlist("metadata")
+            if metadata_list:
+                for item in  metadata_list:
+                    key, val = item.split("=")
+                    metadata[key] = val
 
             if data['type'] == 'no_type':
                 data['type'] = ''
@@ -610,6 +616,7 @@ class UpdateForm(forms.SelfHandlingForm):
                                   required=False,
                                   help_text=_("Specifies that the volume can "
                                               "be used to launch an instance"))
+    metadata = forms.CharField(widget=forms.HiddenInput())
 
     def handle(self, request, data):
         volume_id = self.initial['volume_id']
@@ -633,6 +640,37 @@ class UpdateForm(forms.SelfHandlingForm):
                                   _('Unable to set bootable flag on volume.'),
                                   redirect=redirect)
 
+        meta = {}
+        metadata_list = request.POST.getlist("metadata")
+        if metadata_list:
+            for item in metadata_list:
+                if "=" in item:
+                    key, val = item.split("=")
+                    meta[key] = val
+        old_meta = {}
+        try:
+            volume = cinder.volume_get(self.request, volume_id)
+            old_meta = volume.metadata
+        except Exception:
+            msg = _('Unable to retrieve instance details.')
+            exceptions.handle(self.request, msg)
+
+        delete_meta = dict((k,v) for k,v in old_meta.items() if k not in meta)
+        update_meta =  dict((k,v) for k,v in meta.items() if k not in old_meta
+                or meta[k] != old_meta[k])
+
+        if update_meta:
+            try:
+                cinder.volume_update_meta(request, volume_id, update_meta)
+            except Exception as e:
+                exceptions.handle(request, str(e))
+
+        if delete_meta:
+            try:
+                cinder.volume_delete_meta(request, volume_id, delete_meta)
+            except Exception as e:
+                exceptions.handle(request, str(e))
+                return False
         message = _('Updating volume "%s"') % data['name']
         messages.info(request, message)
         return True

@@ -110,6 +110,14 @@ class MakePrivateContainer(tables.Action):
         return shortcuts.redirect('horizon:project:containers:index')
 
 
+class UpdateContainerMetadata(tables.LinkAction):
+    name = "update_container_metadata"
+    verbose_name = _("Update Metadata")
+    url = "horizon:project:containers:update_container_metadata"
+    classes = ("ajax-modal",)
+    icon = "pencil"
+
+
 class DeleteContainer(tables.DeleteAction):
     @staticmethod
     def action_present(count):
@@ -285,7 +293,7 @@ class ContainersTable(tables.DataTable):
         status_columns = ['metadata_loaded', ]
         table_actions = (CreateContainer,)
         row_actions = (ViewContainer, MakePublicContainer,
-                       MakePrivateContainer, DeleteContainer,)
+                       MakePrivateContainer, UpdateContainerMetadata, DeleteContainer,)
         browser_table = "navigation"
         footer = False
 

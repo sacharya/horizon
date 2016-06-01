@@ -1,9 +1,12 @@
-{% extends "horizon/common/_modal_form.html" %}
+{% extends "horizon/common/_modal_form_metadata.html" %}
 {% load i18n %}
 
 {% block ng_controller %}ImageFormController as ctrl{% endblock %}
 {% block form_attrs %}enctype="multipart/form-data"{% endblock %}
 
+{% block modal-body-metadata %}
+  {% include "horizon/common/_metadata.html"%}
+{% endblock %}
 
 {% block modal-body-right %}
   <h3>{% trans "Description:" %}</h3>

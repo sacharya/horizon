@@ -111,6 +111,7 @@ class UpdateView(forms.ModalFormView):
                 getattr(image, 'container_format') == 'docker'):
             disk_format = 'docker'
         data['disk_format'] = disk_format
+        data['metadata'] = properties
         return data
 
 

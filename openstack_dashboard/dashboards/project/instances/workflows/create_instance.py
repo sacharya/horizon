@@ -22,6 +22,9 @@ import operator
 
 from oslo_utils import units
 
+from django.conf import settings
+from django.core.urlresolvers import reverse
+
 from django.template.defaultfilters import filesizeformat  # noqa
 from django.utils.text import normalize_newlines  # noqa
 from django.utils.translation import ugettext_lazy as _
@@ -39,6 +42,7 @@ from openstack_dashboard import api
 from openstack_dashboard.api import base
 from openstack_dashboard.api import cinder
 from openstack_dashboard.api import nova
+from openstack_dashboard.api import keystone
 from openstack_dashboard.usage import quotas
 
 from openstack_dashboard.dashboards.project.images \
@@ -505,7 +509,7 @@ class SetInstanceDetails(workflows.Step):
     action_class = SetInstanceDetailsAction
     depends_on = ("project_id", "user_id")
     contributes = ("source_type", "source_id",
-                   "availability_zone", "name", "count", "flavor",
+                   "availability_zone", "metadata", "name", "count", "flavor",
                    "device_name",  # Can be None for an image.
                    "delete_on_terminate")
 
@@ -830,6 +834,31 @@ class SetAdvanced(workflows.Step):
         return context
 
 
+class SetMetadataAction(workflows.Action):
+    def __init__(self, request, *args, **kwargs):
+        super(SetMetadataAction, self).__init__(request,
+                                                         *args,
+                                                         **kwargs)
+    metadata = forms.CharField(label=_("Instance Metadata"),
+                           max_length=255,
+                           required=False)
+
+    class Meta(object):
+        name = _("Metadata")
+        slug = "instance_metadata"
+
+
+class SetMetadata(workflows.UpdateMetadataStep):
+    action_class = SetMetadataAction
+    contributes = ("metadata",)
+
+    def contribute(self, data, context):
+        if data:
+            post = self.workflow.request.POST
+            context['metadata'] = post.getlist("metadata")
+        return context
+
+
 class LaunchInstance(workflows.Workflow):
     slug = "launch_instance"
     name = _("Launch Instance")
@@ -843,7 +872,8 @@ class LaunchInstance(workflows.Workflow):
                      SetAccessControls,
                      SetNetwork,
                      PostCreationStep,
-                     SetAdvanced)
+                     SetAdvanced,
+                     SetMetadata)
 
     def format_status_message(self, message):
         name = self.context.get('name', 'unknown instance')
@@ -929,6 +959,13 @@ class LaunchInstance(workflows.Workflow):
                                                   context['network_id'],
                                                   context['profile_id'])
 
+        meta = {}
+        metadata = context.get('metadata', None)
+        if metadata:
+            for item in  metadata:
+                key, val = item.split("=")
+                meta[key] = val
+
         try:
             api.nova.server_create(request,
                                    context['name'],
@@ -944,7 +981,8 @@ class LaunchInstance(workflows.Workflow):
                                    instance_count=int(context['count']),
                                    admin_pass=context['admin_pass'],
                                    disk_config=context.get('disk_config'),
-                                   config_drive=context.get('config_drive'))
+                                   config_drive=context.get('config_drive'),
+                                   meta=meta)
             return True
         except Exception:
             if port_profiles_supported:

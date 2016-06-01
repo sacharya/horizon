@@ -674,6 +674,11 @@ def server_rebuild(request, instance_id, image_id, password=None,
 def server_update(request, instance_id, name):
     return novaclient(request).servers.update(instance_id, name=name)
 
+def server_update_meta(request, instance_id, meta):
+    return novaclient(request).servers.set_meta(instance_id, meta)
+
+def server_delete_meta(request, instance_id, meta):
+    return novaclient(request).servers.delete_meta(instance_id, meta.keys())
 
 def server_migrate(request, instance_id):
     novaclient(request).servers.migrate(instance_id)

@@ -102,7 +102,9 @@ def _metadata_to_header(metadata):
         headers['x-container-read'] = ",".join(public_container_acls)
     elif public is False:
         headers['x-container-read'] = ""
-
+    for key, value in metadata.items():
+        if key.startswith("X-Container-Meta-"):
+            headers[key] = value
     return headers
 
 
@@ -179,6 +181,12 @@ def swift_get_container(request, container_name, with_data=True):
         'is_public': is_public,
         'public_url': public_url,
     }
+    metadata = {}
+    for header, value in headers.items():
+        if 'x-container-meta-' in header:
+            key = header.partition('x-container-meta-')[2]
+            metadata.update({key: value})
+    container_info.update({'metadata': metadata})
     return Container(container_info)
 
 

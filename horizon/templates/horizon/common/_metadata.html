@@ -1,0 +1,62 @@
+{% load i18n %}
+
+<script>
+$(document).ready(function() {
+    var max_fields      = 10; //maximum input boxes allowed
+    var wrapper         = $(".input_fields_wrap"); //Fields wrapper
+    var add_button      = $(".add_field_button"); //Add button ID
+
+    var x = 1; //initlal text box count
+    $(wrapper).on("click",".add_field_button", function(e){ //on add input button click
+        e.preventDefault();
+        if(x < max_fields){ //max input box allowed
+            x++; //text box increment
+            var bla = $('#id_metadata1').val();
+            if(bla) {
+            //$(wrapper).append('<div class="input-group"> <input  class="form-control" maxlength="255" type="text" name="metadata"/><span class="input-group-btn"><a href="" class="btn btn-default add_field_button"><span class="fa fa-plus"></span></a></span></div>'); //add input box
+                $(wrapper).append('<div class="input-group"><label class="control-label  " for="metadata">' + bla + '</label> <span class="input-group-btn"><a href="" class="btn btn-default remove_field"><span class="fa fa-minus"></span></a></span><input  class="form-control" maxlength="255" type="hidden" id="id_metadata" name="metadata" value="' + bla +'"/></div>');
+                $('#id_metadata1').val('');
+            }
+        }
+    });
+
+    $(wrapper).on("click",".remove_field", function(e){ //user click on remove text
+        e.preventDefault(); 
+        //$(this).parent('div').remove(); 
+        $(this).closest(".input-group").remove();
+    })
+});
+</script>
+<noscript><h3>{{ step }}</h3></noscript>
+
+<div class="row">
+<div class="col-sm-12">
+    <div class="form-group>
+        <label class="control-label" for="metadata">Metadata</label>
+        <div class="input_fields_wrap">
+        <div class="input-group">
+            <input class="form-control" maxlength="255" type="text" id="id_metadata1" name="metadata1">
+            <span class="input-group-btn">
+                <a href="" class="btn btn-default add_field_button">
+                    <span class="fa fa-plus"></span>
+                </a>
+            </span>
+    </div>
+    {%if form.metadata.value %}
+        {% for key, value in form.metadata.value.items  %}
+          <div class="input-group">
+            <label class="control-label  " for="metadata">{{ key }}={{ value }}</label>
+            <span class="input-group-btn">
+                <a href="" class="btn btn-default remove_field">
+                    <span class="fa fa-minus"></span>
+                </a>
+            </span>
+            <input  class="form-control" maxlength="255" type="hidden" id="id_metadata" name="metadata" value="{{ key }}={{ value }}"/>
+          </div>
+        {% endfor %}
+    {% endif %}
+    </div>
+</div>
+</div>
+</div>
+

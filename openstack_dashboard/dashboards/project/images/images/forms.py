@@ -256,6 +256,12 @@ class CreateImageForm(forms.SelfHandlingForm):
         else:
             meta['location'] = data['image_url']
 
+        metadata_list = request.POST.getlist("metadata")
+        if metadata_list:
+            for item in metadata_list:
+                key, val = item.split("=")
+                meta['properties'][key] = val
+
         try:
             image = api.glance.image_create(request, **meta)
             messages.success(request,
@@ -323,7 +329,7 @@ class UpdateImageForm(forms.SelfHandlingForm):
                                      required=False)
     public = forms.BooleanField(label=_("Public"), required=False)
     protected = forms.BooleanField(label=_("Protected"), required=False)
-
+    metadata = forms.CharField(widget=forms.HiddenInput())
     def __init__(self, request, *args, **kwargs):
         super(UpdateImageForm, self).__init__(request, *args, **kwargs)
         self.fields['disk_format'].choices = [(value, name) for value,
@@ -340,6 +346,12 @@ class UpdateImageForm(forms.SelfHandlingForm):
         # Ensure we do not delete properties that have already been
         # set on an image.
         meta['purge_props'] = False
+        metadata_list = request.POST.getlist("metadata")
+        if metadata_list:
+            for item in metadata_list:
+                if "=" in item:
+                    key, val = item.split("=")
+                    meta['properties'][key] = val
 
         try:
             image = api.glance.image_update(request, image_id, **meta)

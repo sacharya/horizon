@@ -61,6 +61,13 @@ class CreateContainer(forms.SelfHandlingForm):
             if not data['parent']:
                 is_public = data["access"] == "public"
                 metadata = ({'is_public': is_public})
+                
+                metadata_list = request.POST.getlist("metadata")
+                if metadata_list:
+                    for item in metadata_list:
+                        key, val = item.split("=")
+                        metadata["X-Container-Meta-" + key] = val
+
                 # Create a container
                 api.swift.swift_create_container(request,
                                                  data["name"],
@@ -81,6 +88,52 @@ class CreateContainer(forms.SelfHandlingForm):
         except Exception:
             exceptions.handle(request, _('Unable to create container.'))
 
+
+class UpdateContainerMetadata(forms.SelfHandlingForm):
+
+    metadata = forms.CharField(widget=forms.HiddenInput())
+    container_name = forms.CharField(widget=forms.HiddenInput())
+
+    def handle(self, request, data):
+        meta = {}
+        metadata_list = request.POST.getlist("metadata")
+        if metadata_list:
+            for item in metadata_list:
+                if "=" in item:
+                    key, val = item.split("=")
+                    meta[key] = val
+        old_meta = {}
+        try:
+            container =  api.swift.swift_get_container(
+                                    self.request,
+                                    data["container_name"],
+                                    with_data=False)
+            old_meta = container.metadata
+        except Exception:
+            msg = _('Unable to retrieve instance details.')
+            exceptions.handle(self.request, msg)
+
+        # Pass a empty value to delete a key in swift
+        delete_meta = dict(("X-Container-Meta-" + k,'') for k,v in old_meta.items() if k not in meta)
+        update_meta =  dict(("X-Container-Meta-" + k, v) for k,v in meta.items() if k not in old_meta
+                                or meta[k] != old_meta[k])
+
+        if update_meta:
+            try:
+                api.swift.swift_update_container(request,
+                        data["container_name"], update_meta)
+            except Exception as e:
+                exceptions.handle(request, str(e))
+        if delete_meta:
+            try:
+                api.swift.swift_update_container(request,
+                        data["container_name"], delete_meta)
+            except Exception as e:
+                exceptions.handle(request, str(e))
+                return False
+
+        messages.success(request, _("Container metadata updated successfully."))
+        return True
 
 class UploadObject(forms.SelfHandlingForm):
     path = forms.CharField(max_length=255,

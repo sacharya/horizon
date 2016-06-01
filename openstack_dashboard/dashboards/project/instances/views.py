@@ -251,6 +251,7 @@ class UpdateView(workflows.WorkflowView):
         initial = super(UpdateView, self).get_initial()
         initial.update({'instance_id': self.kwargs['instance_id'],
                         'name': getattr(self.get_object(), 'name', '')})
+        initial.update({'metadata': getattr(self.get_object(), 'metadata', '')})
         return initial
 
 

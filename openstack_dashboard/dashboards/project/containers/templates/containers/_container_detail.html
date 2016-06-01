@@ -21,6 +21,12 @@
     <dd>{{ container.container_object_count }}</dd>
     <dt>{% trans "Size" %}</dt>
     <dd>{{ container.container_bytes_used|filesizeformat }}</dd>
+    {%if container.metadata %}
+      {% for key, value in container.metadata.items  %}
+        <dt>{{ key }}</dt>
+        <dd>{{ value }}</dd>
+      {% endfor %}
+    {% endif %}
   </dl>
 </div>
 {% endblock %}

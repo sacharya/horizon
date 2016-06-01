@@ -1,5 +1,9 @@
-{% extends "horizon/common/_modal_form.html" %}
+{% extends "horizon/common/_modal_form_metadata.html" %}
 {% load i18n %}
+
+{% block modal-body-metadata %}
+  {% include "horizon/common/_metadata.html"%}
+{% endblock %}
 
 {% block modal-body-right %}
   <h3>{% trans "Description:" %}</h3>

@@ -127,6 +127,69 @@ class UpdateInstanceInfo(workflows.Step):
     contributes = ("name",)
 
 
+class UpdateMetadataAction(workflows.Action):
+    def __init__(self, request, *args, **kwargs):
+        super(UpdateMetadataAction, self).__init__(request,
+                                                         *args,
+                                                         **kwargs)
+
+    def handle(self, request, data):
+        instance_id = data['instance_id']
+        metadata_list = data['metadata']
+        meta = {}
+        if metadata_list:
+            for item in metadata_list:
+                if "=" in item:
+                    key, val = item.split("=")
+                    meta[key] = val
+        old_meta = {}
+        try:
+            server = api.nova.server_get(self.request, instance_id)
+            old_meta = server.metadata
+        except Exception:
+            msg = _('Unable to retrieve instance details.')
+            exceptions.handle(self.request, msg)
+
+        delete_meta = dict((k,v) for k,v in old_meta.items() if k not in meta)
+        update_meta =  dict((k,v) for k,v in meta.items() if k not in old_meta or meta[k] != old_meta[k])
+
+        if update_meta:
+            try:
+                api.nova.server_update_meta(request, instance_id,
+                                       update_meta)
+            except Exception as e:
+                exceptions.handle(request, str(e))
+
+        if delete_meta:
+            try:
+                api.nova.server_delete_meta(request, instance_id,
+                                       delete_meta)
+            except Exception as e:
+                exceptions.handle(request, str(e))
+                return False
+
+        return True
+
+    metadata = forms.CharField(label=_("Instance Metadata"),
+                           max_length=255,
+                           required=False)
+
+    class Meta(object):
+        name = _("Metadata")
+        slug = "instance_metadata"
+
+
+class UpdateMetadata(workflows.UpdateMetadataStep):
+    action_class = UpdateMetadataAction
+    contributes = ("metadata",)
+
+    def contribute(self, data, context):
+        if data:
+            post = self.workflow.request.POST
+            context['metadata'] = post.getlist("metadata")
+        return context
+
+
 class UpdateInstance(workflows.Workflow):
     slug = "update_instance"
     name = _("Edit Instance")
@@ -135,7 +198,8 @@ class UpdateInstance(workflows.Workflow):
     failure_message = _('Unable to modify instance "%s".')
     success_url = "horizon:project:instances:index"
     default_steps = (UpdateInstanceInfo,
-                     UpdateInstanceSecurityGroups)
+                     UpdateInstanceSecurityGroups,
+                     UpdateMetadata)
 
     def format_status_message(self, message):
         return message % self.context.get('name', 'unknown instance')

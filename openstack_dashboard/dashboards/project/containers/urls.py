@@ -27,6 +27,10 @@ VIEW_MOD = 'openstack_dashboard.dashboards.project.containers.views'
 # Swift containers and objects.
 urlpatterns = patterns(
     VIEW_MOD,
+    url(r'^(?P<container_name>[^/]+)/update_container_metadata$',
+        views.UpdateContainerMetadataView.as_view(),
+        name='update_container_metadata'),
+
     url(r'^((?P<container_name>.+?)/)?(?P<subfolder_path>(.+/)+)?$',
         views.ContainerView.as_view(), name='index'),
 

@@ -1,4 +1,4 @@
-{% extends "horizon/common/_modal_form.html" %}
+{% extends "horizon/common/_modal_form_metadata.html" %}
 {% load i18n %}
 {% load url from future %}
 
@@ -11,6 +11,9 @@
 <div class="left">
     <fieldset>
         {% include "horizon/common/_form_fields.html" %}
+	{% block modal-body-metadata %}
+    {% include "horizon/common/_metadata.html"%}
+{% endblock %}
     </fieldset>
 </div>
 <div class="right">

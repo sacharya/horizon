@@ -364,7 +364,8 @@ class UpdateView(forms.ModalFormView):
         return {'volume_id': self.kwargs["volume_id"],
                 'name': volume.name,
                 'description': volume.description,
-                'bootable': volume.is_bootable}
+                'bootable': volume.is_bootable,
+                'metadata': volume.metadata}
 
 
 class EditAttachmentsView(tables.DataTableView, forms.ModalFormView):
